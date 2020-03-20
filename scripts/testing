@@ -1,0 +1,25 @@
+// Raw H264 file play
+gst-launch-1.0 filesrc location=/home/roman/Downloads/nature_704x576_25Hz_1500kbits.h264 ! h264parse ! avdec_h264 ! autovideosink
+
+//Raw H264 open and save
+
+
+//Raw H264 open transform null and save
+
+
+//Raw H264 without IDR open transform-with-IDR and save
+
+
+//WebRTC receiver with WebRTCBin filter
+
+//WebRTC sender with WebRTCBin filter, standard H264 video from testgen
+
+//WebRTC sender with WebRTCBin filter transform null, standard H264 video from testgen
+
+//WebRTC sender with WebRTCBin filter and transform-with-IDR pluginn, standard H264 video from testgen
+
+//WebRTC Transformer (receives RTP output SRTP via webrtcbin)
+
+//WebRTC transformer with null transform
+
+//WebRTC transformer with transform-with-IDR pluginn
