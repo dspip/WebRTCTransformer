@@ -17,8 +17,9 @@
 #define STUN_SERVER "stun.l.google.com:19302"
 typedef struct
 {
- char *filename;
+ char *port;
  int  use_filter;
+ char *host;
 }SOUP_DATA;
 
 void sendMessage (void *message, void *user_data)
@@ -133,6 +134,9 @@ const gchar *html_source = " \n \
       window.onload = function() { \n \
         var vidstream = document.getElementById(\"stream\"); \n \
         var config = { 'iceServers': [{ 'urls': 'stun:" STUN_SERVER "' }] }; \n\
+	vidstream.autoplay    = true; \n \
+	vidstream.playsinline = true; \n \
+	vidstream.muted       = true; \n \
         playStream(vidstream, null, null, null, config, function (errmsg) { console.error(errmsg); }); \n \
       }; \n \
  \n \
@@ -257,7 +261,7 @@ soup_websocket_message_cb (G_GNUC_UNUSED SoupWebsocketConnection * connection,
     }
     sdp_string = json_object_get_string_member (data_json_object, "sdp");
 
-    webrtc_set_remote_sdp (user_data, sdp_string);
+    webrtc_set_remote_sdp (user_data, (char *)sdp_string);
   } else if (g_strcmp0 (type_string, "ice") == 0) {
     guint mline_index;
     const gchar *candidate_string;
@@ -278,7 +282,7 @@ soup_websocket_message_cb (G_GNUC_UNUSED SoupWebsocketConnection * connection,
 
     g_print ("Received ICE candidate with mline index %u; candidate: %s\n",
         mline_index, candidate_string);
-    webrtc_set_remote_ice (user_data, mline_index, candidate_string);
+    webrtc_set_remote_ice (user_data, mline_index, (char *)candidate_string);
   } else
     goto unknown_message;
 
@@ -304,7 +308,8 @@ soup_websocket_handler (G_GNUC_UNUSED SoupServer * server,
 
   g_print ("Processing new websocket connection %p", (gpointer) connection); 
   g_print ("Create gstreamer connection here\n");
-  void *ctx = start_webrtc_stream (sdata->filename, sdata->use_filter, sendMessage, g_object_ref(connection));
+  void *ctx = start_webrtc_stream ( sdata->host, sdata->port, sdata->use_filter, 
+		  sendMessage, g_object_ref(connection));
   g_signal_connect (G_OBJECT (connection), "message",
       G_CALLBACK (soup_websocket_message_cb), (gpointer)ctx);
   g_signal_connect (G_OBJECT (connection), "closed",
@@ -317,16 +322,24 @@ int main (int argc, char *argv[])
   GMainLoop *mainloop;
   SoupServer *soup_server;
   void *ctx = NULL;
+  char *mpeg_config = NULL;
   SOUP_DATA sdata;
-
-  if (argc != 3 )
+  if (argc < 4 )
   {
-     g_print ("Usage ./test filename <use filter 1/0>\n");
+     g_print ("Usage ./test <filter options select\n 0-enable filter\n 1-disable filter\n 2-removefilter\n 3-passthrough H264\n \n 4-passthrough VP9\n 5-MPEG4 \n> <SRC IP> <UDP port>\n");
      return -1;
   }
+  int filter_option = atoi(argv[1]);
+  if (filter_option < 0)
+  {
+     g_print ("wrong filter option: select\n 0-enable filter\n 1-disable filter\n 2-removefilter\n 3-passthrough H264\n \n 4-passthrough VP9\n 5-MPEG4 \n");
+     return -1;     
+  }
   
-  sdata.filename = argv[1];
-  sdata.use_filter = atoi(argv[2]);
+  sdata.use_filter = atoi(argv[1]);
+  sdata.host = argv[2];
+  sdata.port = argv[3];
+
   initialize_ctx ();
   mainloop = g_main_loop_new (NULL, FALSE);
   g_unix_signal_add (SIGINT, exit_sighandler, mainloop);

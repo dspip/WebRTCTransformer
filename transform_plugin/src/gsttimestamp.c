@@ -160,6 +160,9 @@ gst_timestamp_init (Gsttimestamp * filter)
 
   filter->silent = FALSE;
   filter->sent_sei = FALSE;
+  filter->fps_num = 0;
+  filter->fps_den = 1;
+
 }
 
 static void
@@ -214,6 +217,10 @@ gst_timestamp_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
       GstCaps * caps;
 
       gst_event_parse_caps (event, &caps);
+      GstStructure *s = gst_caps_get_structure (caps, 0);
+      
+      gst_structure_get_fraction (s, "framerate", &(filter->fps_num), &(filter->fps_den));
+
       /* do something with the caps */
 
       /* and forward */
@@ -261,8 +268,13 @@ gst_timestamp_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
     GstMapInfo info;
     int i;
     filter = GST_TIMESTAMP (parent);
+    float fps = filter->fps_num/filter->fps_den;
     guint64 val = 1000000000;
-    val = val/25;
+    if (fps > 0.0)
+        val = val/fps;
+    else
+	val = val/25;
+
     static guint64 j = 0;
     GST_BUFFER_CAST(buf)->pts = ((j++)*(val));
     return gst_pad_push (filter->srcpad, buf);

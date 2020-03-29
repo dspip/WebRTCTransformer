@@ -74,6 +74,10 @@ struct _Gsttimestamp
   gboolean silent;
 
   gboolean sent_sei;
+
+  gint fps_num;
+  gint fps_den;
+
 };
 
 struct _GsttimestampClass 

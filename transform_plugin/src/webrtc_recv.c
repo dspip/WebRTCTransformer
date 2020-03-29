@@ -110,7 +110,7 @@ static void on_message(SoupWebsocketConnection *conn, gint data_type, GBytes *me
     sdp_string = json_object_get_string_member (data_json_object, "sdp");
 
     g_print ("Received SDP:\n%s\n", sdp_string);
-    webrtc_set_remote_sdp (user_data, sdp_string);
+    webrtc_set_remote_sdp (user_data, (char *)sdp_string);
   } else if (g_strcmp0 (type_string, "ice") == 0) {
     guint mline_index;
     const gchar *candidate_string;
@@ -131,7 +131,7 @@ static void on_message(SoupWebsocketConnection *conn, gint data_type, GBytes *me
 
     g_print ("Received ICE candidate with mline index %u; candidate: %s\n",
         mline_index, candidate_string);
-    webrtc_set_remote_ice (user_data, mline_index, candidate_string);
+    webrtc_set_remote_ice (user_data, mline_index, (char *)candidate_string);
   } else
     goto unknown_message;
 

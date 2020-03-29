@@ -77,7 +77,7 @@ enum
 enum
 {
   PROP_0,
-  PROP_SILENT
+  PROP_ENABLE
 };
 
 /* the capabilities of the inputs and outputs.
@@ -122,8 +122,8 @@ gst_idrinsert_class_init (GstidrinsertClass * klass)
   gobject_class->set_property = gst_idrinsert_set_property;
   gobject_class->get_property = gst_idrinsert_get_property;
 
-  g_object_class_install_property (gobject_class, PROP_SILENT,
-      g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
+  g_object_class_install_property (gobject_class, PROP_ENABLE,
+      g_param_spec_boolean ("enable", "Enable", "enable plugin ?",
           FALSE, G_PARAM_READWRITE));
 
   gst_element_class_set_details_simple(gstelement_class,
@@ -158,7 +158,7 @@ gst_idrinsert_init (Gstidrinsert * filter)
   GST_PAD_SET_PROXY_CAPS (filter->srcpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
 
-  filter->silent = FALSE;
+  filter->enable = FALSE;
   filter->sent_sei = FALSE;
 }
 
@@ -169,8 +169,8 @@ gst_idrinsert_set_property (GObject * object, guint prop_id,
   Gstidrinsert *filter = GST_IDRINSERT (object);
 
   switch (prop_id) {
-    case PROP_SILENT:
-      filter->silent = g_value_get_boolean (value);
+    case PROP_ENABLE:
+      filter->enable = g_value_get_boolean (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -185,8 +185,8 @@ gst_idrinsert_get_property (GObject * object, guint prop_id,
   Gstidrinsert *filter = GST_IDRINSERT (object);
 
   switch (prop_id) {
-    case PROP_SILENT:
-      g_value_set_boolean (value, filter->silent);
+    case PROP_ENABLE:
+      g_value_set_boolean (value, filter->enable);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -263,8 +263,7 @@ gst_idrinsert_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
   filter = GST_IDRINSERT (parent);
   gst_buffer_map (buf, &info, GST_MAP_READWRITE);
   unsigned char *data = info.data;
-
-  if (filter->sent_sei == FALSE)
+  if ((filter->enable == TRUE) && (filter->sent_sei == FALSE))
   {
       for (i=0; i<(info.size-3); i++)
       {

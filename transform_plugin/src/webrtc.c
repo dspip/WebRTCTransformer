@@ -12,7 +12,7 @@
 
 #define RTP_PAYLOAD_TYPE "96"
 #define SOUP_HTTP_PORT 57778
-#define STUN_SERVER "stun.l.google.com:19302"
+#define STUN_SERVER  "stun.l.google.com:19302"
 
 typedef struct
 {
@@ -211,7 +211,9 @@ void initialize_ctx()
     gst_init (NULL, NULL); 
 }
 
-void*  start_webrtc_stream(char *filename,
+void*  start_webrtc_stream(
+    char *address,
+    char *port,
      int add_filter,
      user_cb userCb,
      void *user_data
@@ -226,22 +228,70 @@ void*  start_webrtc_stream(char *filename,
 
     char pipeline_str[1204];
 
-    if (add_filter == 1)
-    {
+
+    //Add SEI header
+    if (add_filter == 0)
+    { 
+     g_print ("Adding IDRSERT Filter\n") ;	    
      sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
-       "filesrc location=%s ! h264parse ! idrinsert ! avdec_h264 ! timestamp ! x264enc ! "
-       "rtph264pay  ! "
+       "udpsrc address=%s port=%s ! application/x-rtp,media=video,encoding-name=H264, payload=96 ! rtph264depay ! h264parse ! idrinsert enable=true ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
-       RTP_PAYLOAD_TYPE " ! webrtcbin. ", filename);
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
     }    
-    else
+    //Disable filter
+    else if (add_filter == 1)
     {
      sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
-       "filesrc location=%s ! h264parse !  avdec_h264 !  x264enc ! "
-       "rtph264pay  ! "
+       "udpsrc address=%s port=%s ! application/x-rtp,media=video,encoding-name=H264, payload=96 ! rtph264depay ! h264parse ! idrinsert enable=false ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
-       RTP_PAYLOAD_TYPE " ! webrtcbin. ", filename);
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
     }
+    //Remove filter
+    else if (add_filter == 2)
+    { 
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
+       "udpsrc address=%s port=%s ! application/x-rtp,media=video,encoding-name=H264, payload=96 ! rtph264depay ! h264parse !  rtph264pay config-interval=-1 !  "
+       "application/x-rtp,media=video,encoding-name=H264,payload="
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
+    }
+    //Pass through H264
+    else if (add_filter == 3)
+    {
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
+       "udpsrc address=%s port=%s ! "
+       "application/x-rtp,media=video,encoding-name=H264,payload="
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
+    }
+    //Pass through VP9
+    else if (add_filter == 4)
+    {
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
+       "udpsrc address=%s port=%s ! "
+       "application/x-rtp,media=video,encoding-name=VP9,payload="
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
+    }
+    else if ((add_filter == 5))
+    {
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
+       "udpsrc address=%s port=%s ! application/x-rtp, clock-rate=90000, encoding-name=MP4V-ES ! rtpmp4vdepay ! avdec_mpeg4 ! videoconvert ! x264enc tune=zerolatency !  video/x-h264, profile=baseline, bitrate=4096 ! rtph264pay config-interval=-1 !  "
+       "application/x-rtp,media=video,encoding-name=H264,payload="
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
+    }
+#if 0
+    else if ((add_filter == 6))
+    {
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
+       "filesrc location=%s ! qtdemux !  rtph264pay config-interval=-1 !  "
+       "application/x-rtp,media=video,encoding-name=H264,payload="
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
+    }
+#endif
+    else
+    { 
+     g_print ("Not valid filter option selected\n");
+     g_print ("select\n 0-enablefilter\n 1-disablefilter\n 2-removefilter\n 3-passthrough\n");
+     return NULL;
+    }    
 
     g_print ("Created Pipeline %s\n", pipeline_str);
         ctx->pipeline = gst_parse_launch (pipeline_str , &error);

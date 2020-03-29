@@ -71,7 +71,7 @@ struct _Gstidrinsert
 
   GstPad *sinkpad, *srcpad;
 
-  gboolean silent;
+  gboolean enable;
 
   gboolean sent_sei;
 };
