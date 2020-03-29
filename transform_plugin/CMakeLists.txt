@@ -21,6 +21,11 @@ pkg_check_modules(PC_GST_AUDIO REQUIRED  "gstreamer-audio-1.0 >= 1.8.0")
 pkg_check_modules(PC_GST_VIDEO REQUIRED  "gstreamer-video-1.0 >= 1.8.0")
 pkg_check_modules(PC_GST_PBUTILS REQUIRED  "gstreamer-pbutils-1.0 >= 1.8.0")
 pkg_check_modules(PC_GST_TAG REQUIRED  "gstreamer-tag-1.0 >= 1.8.0")
+pkg_check_modules(PC_GST_SOUP REQUIRED  "libsoup-2.4")
+#gstreamer-webrtc-1.0 gstreamer-sdp-1.0 libsoup-2.4 json-glib-1.0
+pkg_check_modules(PC_GST_WEBRTC REQUIRED  "gstreamer-webrtc-1.0")
+pkg_check_modules(PC_GST_SDP    REQUIRED  "gstreamer-sdp-1.0")
+pkg_check_modules(PC_JSON_GLIB  REQUIRED  "json-glib-1.0")
 if (PC_GST_FOUND)
   set(GSTREAMER_LIBRARIES
     ${PC_GIO_LIBRARIES}
@@ -30,9 +35,19 @@ if (PC_GST_FOUND)
     ${PC_GST_AUDIO_LIBRARIES}
     ${PC_GST_VIDEO_LIBRARIES}
     ${PC_GST_TAG_LIBRARIES}
+    ${PC_GST_SOUP_LIBRARIES}
+    ${PC_GST_WEBRTC_LIBRARIES}
+    ${PC_GST_SDP_LIBRARIES}
+    ${PC_JSON_GLIB_LIBRARIES}
     )
 
-  set(GSTREAMER_INCLUDE_DIRS ${PC_GST_INCLUDE_DIRS})
+  set(GSTREAMER_INCLUDE_DIRS 
+	  ${PC_GST_INCLUDE_DIRS} 
+	  ${PC_GST_SOUP_INCLUDE_DIRS}
+	  ${PC_GST_WEBRTC_INCLUDE_DIRS}
+	  ${PC_GST_SDP_INCLUDE_DIRS}
+	  ${PC_JSON_GLIB_INCLUDE_DIRS}
+	  )
   message(STATUS "GStreamer found ${PC_GST_VERSION}")
 endif ()
 
