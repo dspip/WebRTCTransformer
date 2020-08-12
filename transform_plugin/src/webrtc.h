@@ -5,6 +5,7 @@ typedef void (*user_cb)(void *messege, void *user_data);
 void initialize_ctx();
 void *  start_webrtc_stream( char *host,
                 char *port,
+		char *interface,
 		int add_filter,
 		user_cb userCb,
 		void *user_data);

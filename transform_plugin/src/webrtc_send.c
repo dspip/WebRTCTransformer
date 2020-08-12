@@ -20,6 +20,7 @@ typedef struct
  char *port;
  int  use_filter;
  char *host;
+ char *interface;
 }SOUP_DATA;
 
 void sendMessage (void *message, void *user_data)
@@ -308,7 +309,7 @@ soup_websocket_handler (G_GNUC_UNUSED SoupServer * server,
 
   g_print ("Processing new websocket connection %p", (gpointer) connection); 
   g_print ("Create gstreamer connection here\n");
-  void *ctx = start_webrtc_stream ( sdata->host, sdata->port, sdata->use_filter, 
+  void *ctx = start_webrtc_stream ( sdata->host, sdata->port, sdata->interface, sdata->use_filter, 
 		  sendMessage, g_object_ref(connection));
   g_signal_connect (G_OBJECT (connection), "message",
       G_CALLBACK (soup_websocket_message_cb), (gpointer)ctx);
@@ -339,9 +340,19 @@ int main (int argc, char *argv[])
   sdata.use_filter = atoi(argv[1]);
   sdata.host = argv[2];
 
+   sdata.interface = NULL;
    if (filter_option < 7)
 	  sdata.port = argv[3];
 
+   if (filter_option == 6)
+   {
+	   if (argc != 5)
+	   {
+		   g_print ("run ./stream_send <filter option> <ip> <port> <multicast interface>\n");
+		   return -1;
+	   }
+	   sdata.interface = argv[4];
+   }
   initialize_ctx ();
   mainloop = g_main_loop_new (NULL, FALSE);
   g_unix_signal_add (SIGINT, exit_sighandler, mainloop);

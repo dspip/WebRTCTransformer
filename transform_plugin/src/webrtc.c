@@ -236,6 +236,7 @@ static void enable_factory (const gchar *name, gboolean enable) {
 void*  start_webrtc_stream(
     char *address,
     char *port,
+    char *interface,
      int add_filter,
      user_cb userCb,
      void *user_data
@@ -295,16 +296,16 @@ void*  start_webrtc_stream(
     else if ((add_filter == 5))
     {
      sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
-       "udpsrc address=%s port=%s ! application/x-rtp, clock-rate=90000, encoding-name=MP4V-ES ! rtpmp4vdepay ! avdec_mpeg4 ! timestamp ! videoconvert ! x264enc !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
+       "udpsrc address=%s port=%s ! application/x-rtp, clock-rate=90000, encoding-name=MP4V-ES ! rtpmp4vdepay ! avdec_mpeg4 ! timestamp ! videoconvert ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
        RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
     }
     else if ((add_filter == 6))
     {
      sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
-       "udpsrc address=%s port=%s ! mpeg4filter ! mpeg4videoparse  ! timestamp ! avdec_mpeg4 ! videoconvert ! videorate ! video/x-raw, framerate=30/1 ! x264enc  !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
+       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  avdec_mpeg4 skip-frame=5 ! videoconvert ! videorate ! video/x-raw, framerate=50/1 ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
-       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface);
     }
     else if ((add_filter == 7))
     {
