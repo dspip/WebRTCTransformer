@@ -6,7 +6,7 @@ when we compile the code rtp_generator will be created in src/rtp_generator.
 This application is used to send the rtp data to  webrtc transformer.
 
 Usage :
-./rtp_generator <filename> <transcoding 1/0> <mpeg4-0 h264-1><address> <port>
+./rtp_generator <filename> <transcoding 1/0> <mpeg4-0 h264-1><address> <port> 
 
 cases:
 Note: First Two case will do  transcoding to generate specific codec output
@@ -68,7 +68,7 @@ This application is used to send H264 video stream to web browser through webrtc
 
 To stream video to browser we need to run:
 
-a) ./src/stream_send <filter_option> <src address > <udp port>
+a) ./src/stream_send <filter_option> <src address > <udp port> <multicast interface on option 6>
    filter_options : 0 - enbale filter
                     
                     1 - disable filter     
@@ -81,7 +81,9 @@ a) ./src/stream_send <filter_option> <src address > <udp port>
 
 		    5 - mpeg4/RTP
                  
-                    6 - File to webrtc
+                    6 - multicast mpeg4 to webrtc
+		    
+		    7 - file to webrtc
 
   
     e.g ./src/stream_send 0 127.0.0.1(src address) 5555
@@ -133,6 +135,9 @@ application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(st
 2) Now run mpeg4 to webrtc pipeline with config 
 ./src/stream_send  5  127.0.0.1 5000
 
+3) To test the multicast mpeg4 stream
+
+./src/stream_send 6 239.3.0.1 6001 eno1
 
 5) To test file streaming 
 
