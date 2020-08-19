@@ -287,7 +287,7 @@ gst_timestamp_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
     if (fps > 0.0)
         val = val/fps;
     else
-	val = val/30;
+	val = val/60;
 
     static guint64 j = 0;
     GST_BUFFER_CAST(buf)->pts = ((j++)*(val));
