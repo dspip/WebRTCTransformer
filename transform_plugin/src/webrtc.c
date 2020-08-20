@@ -303,7 +303,7 @@ void*  start_webrtc_stream(
     else if ((add_filter == 6))
     {
      sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
-       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  avdec_mpeg4 skip-frame=5 ! videoconvert ! videorate ! video/x-raw, framerate=50/1 ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
+       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! timestamp ! mpeg4videoparse  !  avdec_mpeg4 skip-frame=5 ! videoconvert ! videorate ! video/x-raw, framerate=60/1 ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
        RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface);
     }
