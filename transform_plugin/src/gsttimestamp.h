@@ -75,8 +75,8 @@ struct _Gsttimestamp
 
   gboolean sent_sei;
 
-  gint fps_num;
-  gint fps_den;
+  float fps_num;
+  float fps_den;
 
 };
 

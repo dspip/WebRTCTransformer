@@ -21,6 +21,7 @@ typedef struct
  int  use_filter;
  char *host;
  char *interface;
+ char *fps;
 }SOUP_DATA;
 
 void sendMessage (void *message, void *user_data)
@@ -310,6 +311,7 @@ soup_websocket_handler (G_GNUC_UNUSED SoupServer * server,
   g_print ("Processing new websocket connection %p", (gpointer) connection); 
   g_print ("Create gstreamer connection here\n");
   void *ctx = start_webrtc_stream ( sdata->host, sdata->port, sdata->interface, sdata->use_filter, 
+		  sdata->fps,
 		  sendMessage, g_object_ref(connection));
   g_signal_connect (G_OBJECT (connection), "message",
       G_CALLBACK (soup_websocket_message_cb), (gpointer)ctx);
@@ -327,7 +329,7 @@ int main (int argc, char *argv[])
   SOUP_DATA sdata;
   if (argc < 3 )
   {
-     g_print ("Usage ./test <filter options select\n 0-enable filter\n 1-disable filter\n 2-removefilter\n 3-passthrough H264\n \n 4-passthrough VP9\n 5-MPEG \n4  6-MPEG4FILTER \n7-FILEto WebRTC\n> <SRC IP> <UDP port>\n");
+     g_print ("Usage ./test <filter options select\n 0-enable filter\n 1-disable filter\n 2-removefilter\n 3-passthrough H264\n \n 4-passthrough VP9\n 5-MPEG \n4  6-FILE to WebRTC \n7-multicast mpeg4 \n8 multicat mpeg4 fps config \n9 multicast mpeg4 x264enc change fps\n> <SRC IP> <UDP port>\n");
      return -1;
   }
   int filter_option = atoi(argv[1]);
@@ -339,19 +341,20 @@ int main (int argc, char *argv[])
   
   sdata.use_filter = atoi(argv[1]);
   sdata.host = argv[2];
-
+  sdata.fps = "60";
    sdata.interface = NULL;
-   if (filter_option < 7)
+   if (filter_option < 10)
 	  sdata.port = argv[3];
 
-   if (filter_option == 6)
+   if (filter_option > 7)
    {
-	   if (argc != 5)
+	   if (argc != 6)
 	   {
-		   g_print ("run ./stream_send <filter option> <ip> <port> <multicast interface>\n");
+		   g_print ("run ./stream_send <filter option> <ip> <port> <multicast interface> <fps>\n");
 		   return -1;
 	   }
 	   sdata.interface = argv[4];
+	   sdata.fps = argv[5];
    }
   initialize_ctx ();
   mainloop = g_main_loop_new (NULL, FALSE);

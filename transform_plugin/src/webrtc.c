@@ -238,6 +238,7 @@ void*  start_webrtc_stream(
     char *port,
     char *interface,
      int add_filter,
+     char *fps,
      user_cb userCb,
      void *user_data
      )
@@ -303,16 +304,43 @@ void*  start_webrtc_stream(
     else if ((add_filter == 6))
     {
      sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
+       "filesrc location=%s ! decodebin ! videoconvert !  x264enc ! video/x-h264, profile=baseline  !   rtph264pay config-interval=-1 !  "
+       "application/x-rtp,media=video,encoding-name=H264,payload="
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address);
+    }
+    else if ((add_filter == 7))
+    {
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin "
        "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  timestamp ! avdec_mpeg4 skip-frame=5 ! videoconvert ! videorate ! video/x-raw, framerate=60/1 ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
        RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface);
     }
-    else if ((add_filter == 7))
+    else if ((add_filter == 8))
     {
-     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
-       "filesrc location=%s ! decodebin ! videoconvert !  x264enc ! video/x-h264, profile=baseline  !   rtph264pay config-interval=-1 !  "
+     if (!strcmp (fps, "-1"))
+     {
+	     sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
+			     "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  timestamp fps=%s ! avdec_mpeg4 skip-frame=5 ! videoconvert ! timestamp fps=%s ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
+			     "application/x-rtp,media=video,encoding-name=H264,payload="
+			     RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface, fps, fps);
+     }	     
+     else
+     {
+	     float fps_v = atof(fps);
+	     int fps_num = fps_v*1000;
+	     int fps_den = 1000;
+	     sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
+			     "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  timestamp fps=%s ! avdec_mpeg4 skip-frame=5 ! videoconvert !  videorate ! video/x-raw, framerate=%d/%d ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
+			     "application/x-rtp,media=video,encoding-name=H264,payload="
+			     RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface, fps, fps_num, fps_den);
+     }
+    }
+    else if ((add_filter == 9))
+    {
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin "
+       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  timestamp fps=%s ! avdec_mpeg4 skip-frame=5 ! videoconvert ! videorate ! video/x-raw, framerate=%s/1  ! x264enc tune=zerolatency ! timestamp fps=1000 !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
-       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address);
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface, fps, fps);
     }
     else
     { 

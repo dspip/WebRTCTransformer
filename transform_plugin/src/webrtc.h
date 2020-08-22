@@ -7,6 +7,7 @@ void *  start_webrtc_stream( char *host,
                 char *port,
 		char *interface,
 		int add_filter,
+		char *fps,
 		user_cb userCb,
 		void *user_data);
 void delete_ctx (void *ctx);

@@ -63,7 +63,7 @@
 #include <gst/gst.h>
 
 #include "gsttimestamp.h"
-
+#include <inttypes.h>
 GST_DEBUG_CATEGORY_STATIC (gst_timestamp_debug);
 #define GST_CAT_DEFAULT gst_timestamp_debug
 
@@ -77,6 +77,7 @@ enum
 enum
 {
   PROP_0,
+  PROP_FPS,
   PROP_SILENT
 };
 
@@ -126,6 +127,11 @@ gst_timestamp_class_init (GsttimestampClass * klass)
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
           FALSE, G_PARAM_READWRITE));
 
+  g_object_class_install_property (gobject_class, PROP_FPS,
+      g_param_spec_float ("fps", "FPS", "Set Output FPS",
+	      -1,
+	      5000,
+	      -1, G_PARAM_READWRITE));
   gst_element_class_set_details_simple(gstelement_class,
     "timestamp",
     "FIXME:Generic",
@@ -175,6 +181,10 @@ gst_timestamp_set_property (GObject * object, guint prop_id,
     case PROP_SILENT:
       filter->silent = g_value_get_boolean (value);
       break;
+    case PROP_FPS:
+      filter->fps_num = g_value_get_float(value);
+      filter->fps_den = 1;
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -190,6 +200,9 @@ gst_timestamp_get_property (GObject * object, guint prop_id,
   switch (prop_id) {
     case PROP_SILENT:
       g_value_set_boolean (value, filter->silent);
+      break;
+    case PROP_FPS:
+      g_value_set_float (value, filter->fps_num);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -275,6 +288,12 @@ static GstFlowReturn insert_sei (Gsttimestamp *filter)
   gst_buffer_unmap (buf1, &info1);
   return gst_pad_push (filter->srcpad, buf1); 
 }
+
+uint64_t GetTimeStamp() {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
+}
 static GstFlowReturn
 gst_timestamp_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
 {
@@ -283,14 +302,22 @@ gst_timestamp_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
     int i;
     filter = GST_TIMESTAMP (parent);
     float fps = filter->fps_num/filter->fps_den;
+    static guint64 j = 0;
     guint64 val = 1000000000;
     if (fps > 0.0)
-        val = val/fps;
+    {
+	    val = val/fps;
+	    GST_BUFFER_CAST(buf)->pts = ((j++)*(val));
+    }
+    else if (fps  == -1)
+    {
+    	val = GetTimeStamp()*1000;
+    }
     else
-	val = val/60;
-
-    static guint64 j = 0;
-    GST_BUFFER_CAST(buf)->pts = ((j++)*(val));
+    {
+	    val = val/60;
+	    GST_BUFFER_CAST(buf)->pts = ((j++)*(val));
+    }
     return gst_pad_push (filter->srcpad, buf);
 }
 
