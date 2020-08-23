@@ -289,9 +289,11 @@ void*  start_webrtc_stream(
     //Pass through VP9
     else if (add_filter == 4)
     {
-     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
-       "udpsrc address=%s port=%s ! "
-       "application/x-rtp,media=video,encoding-name=VP9,payload="
+	    // x264enc  option-string=\"fps=25\" 
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin "
+ //      "udpsrc address=%s port=%s  ! doherh264depay ! h264parse ! avdec_h264 ! deinterlace ! timestamp fps=25.0 !  x264enc  ! video/x-h264, profile=baseline !  rtph264pay config-interval=-1 !  "
+       "udpsrc address=%s port=%s  ! c264depay ! h264parse ! avdec_h264 ! deinterlace ! videoconvert ! videorate ! video/x-raw, framerate=25/1  !  x264enc  ! video/x-h264, profile=baseline !  rtph264pay config-interval=-1 !  "
+       "application/x-rtp,media=video,encoding-name=H264,payload="
        RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
     }
     else if ((add_filter == 5))
@@ -311,12 +313,13 @@ void*  start_webrtc_stream(
     else if ((add_filter == 7))
     {
      sprintf(pipeline_str, "webrtcbin name=webrtcbin "
-       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  timestamp ! avdec_mpeg4 skip-frame=5 ! videoconvert ! videorate ! video/x-raw, framerate=60/1 ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
+       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  ! nvv4l2decoder !  timestamp ! nvvideoconvert ! video/x-raw(memory:NVMM),format=I420  ! nvv4l2h264enc ! h264parse  ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
        RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface);
     }
     else if ((add_filter == 8))
     {
+#if 1    
      if (!strcmp (fps, "-1"))
      {
 	     sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
@@ -327,13 +330,20 @@ void*  start_webrtc_stream(
      else
      {
 	     float fps_v = atof(fps);
-	     int fps_num = fps_v*1000;
-	     int fps_den = 1000;
-	     sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
-			     "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  timestamp fps=%s ! avdec_mpeg4 skip-frame=5 ! videoconvert !  videorate ! video/x-raw, framerate=%d/%d ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
+	     int fps_num = fps_v*100;
+	     int fps_den = 100;
+	     sprintf(pipeline_str, "webrtcbin name=webrtcbin   "
+			     "udpsrc address=%s port=%s  multicast-iface=%s ! rtpextention name=r r.src_1 ! filesink location=extention.bin sync=false  async=false r.src_0 !  mpeg4filter ! mpeg4videoparse  !  timestamp fps=%s ! avdec_mpeg4 skip-frame=5 ! videoconvert !  videorate ! video/x-raw, framerate=%d/%d ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
 			     "application/x-rtp,media=video,encoding-name=H264,payload="
 			     RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface, fps, fps_num, fps_den);
      }
+#else
+
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin "
+       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  ! nvv4l2decoder !  timestamp fps=%s ! nvvideoconvert ! video/x-raw(memory:NVMM),format=I420  ! nvv4l2h264enc ! h264parse  ! rtph264pay config-interval=-1 !  "
+       "application/x-rtp,media=video,encoding-name=H264,payload="
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface, fps);
+#endif     
     }
     else if ((add_filter == 9))
     {
@@ -420,11 +430,13 @@ void *receive_webrtc_stream (user_cb userCb,
 
 void delete_ctx (void *ctx1)
 {
+    g_print ("Deleting conext 0");
     WEBRTC_CTX *ctx = (WEBRTC_CTX *)ctx1;
     gst_element_set_state (GST_ELEMENT (ctx->pipeline),
       GST_STATE_NULL);
     gst_object_unref (GST_OBJECT (ctx->webrtcbin));
     gst_object_unref (GST_OBJECT (ctx->pipeline));
  //   gst_deinit (); 
+    g_print ("Deleting conext 1");
 }
 

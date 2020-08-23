@@ -17,6 +17,7 @@ pkg_check_modules(PC_GIO REQUIRED  "gio-2.0 >= 2.22")
 pkg_check_modules(PC_GST REQUIRED  "gstreamer-1.0 >= 1.8.0")
 pkg_check_modules(PC_GST_BASE REQUIRED "gstreamer-base-1.0 >= 1.8.0")
 pkg_check_modules(PC_GST_APP REQUIRED "gstreamer-app-1.0 >= 1.8.0")
+pkg_check_modules(PC_GST_RTP REQUIRED "gstreamer-rtp-1.0 >= 1.8.0")
 pkg_check_modules(PC_GST_AUDIO REQUIRED  "gstreamer-audio-1.0 >= 1.8.0")
 pkg_check_modules(PC_GST_VIDEO REQUIRED  "gstreamer-video-1.0 >= 1.8.0")
 pkg_check_modules(PC_GST_PBUTILS REQUIRED  "gstreamer-pbutils-1.0 >= 1.8.0")
@@ -32,6 +33,7 @@ if (PC_GST_FOUND)
     ${PC_GST_LIBRARIES}
     ${PC_GST_BASE_LIBRARIES}
     ${PC_GST_APP_LIBRARIES}
+    ${PC_GST_RTP_LIBRARIES}
     ${PC_GST_AUDIO_LIBRARIES}
     ${PC_GST_VIDEO_LIBRARIES}
     ${PC_GST_TAG_LIBRARIES}
