@@ -44,14 +44,14 @@
  */
 
 /**
- * SECTION:element-mpeg4filter
+ * SECTION:element-removesei
  *
- * FIXME:Describe mpeg4filter here.
+ * FIXME:Describe removesei here.
  *
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch -v -m fakesrc ! mpeg4filter ! fakesink silent=TRUE
+ * gst-launch -v -m fakesrc ! removesei ! fakesink silent=TRUE
  * ]|
  * </refsect2>
  */
@@ -61,13 +61,11 @@
 #endif
 
 #include <gst/gst.h>
-#include <stdio.h>
-#include "gstmpeg4filter.h"
-#include <inttypes.h>
 
+#include "gstremovesei.h"
 
-GST_DEBUG_CATEGORY_STATIC (gst_mpeg4filter_debug);
-#define GST_CAT_DEFAULT gst_mpeg4filter_debug
+GST_DEBUG_CATEGORY_STATIC (gst_removesei_debug);
+#define GST_CAT_DEFAULT gst_removesei_debug
 
 /* Filter signals and args */
 enum
@@ -98,22 +96,22 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
     GST_STATIC_CAPS ("ANY")
     );
 
-#define gst_mpeg4filter_parent_class parent_class
-G_DEFINE_TYPE (Gstmpeg4filter, gst_mpeg4filter, GST_TYPE_ELEMENT);
+#define gst_removesei_parent_class parent_class
+G_DEFINE_TYPE (Gstremovesei, gst_removesei, GST_TYPE_ELEMENT);
 
-static void gst_mpeg4filter_set_property (GObject * object, guint prop_id,
+static void gst_removesei_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
-static void gst_mpeg4filter_get_property (GObject * object, guint prop_id,
+static void gst_removesei_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static gboolean gst_mpeg4filter_sink_event (GstPad * pad, GstObject * parent, GstEvent * event);
-static GstFlowReturn gst_mpeg4filter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf);
+static gboolean gst_removesei_sink_event (GstPad * pad, GstObject * parent, GstEvent * event);
+static GstFlowReturn gst_removesei_chain (GstPad * pad, GstObject * parent, GstBuffer * buf);
 
 /* GObject vmethod implementations */
 
-/* initialize the mpeg4filter's class */
+/* initialize the removesei's class */
 static void
-gst_mpeg4filter_class_init (Gstmpeg4filterClass * klass)
+gst_removesei_class_init (GstremoveseiClass * klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
@@ -121,15 +119,15 @@ gst_mpeg4filter_class_init (Gstmpeg4filterClass * klass)
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
 
-  gobject_class->set_property = gst_mpeg4filter_set_property;
-  gobject_class->get_property = gst_mpeg4filter_get_property;
+  gobject_class->set_property = gst_removesei_set_property;
+  gobject_class->get_property = gst_removesei_get_property;
 
   g_object_class_install_property (gobject_class, PROP_ENABLE,
       g_param_spec_boolean ("enable", "Enable", "enable plugin ?",
           FALSE, G_PARAM_READWRITE));
 
   gst_element_class_set_details_simple(gstelement_class,
-    "mpeg4filter",
+    "removesei",
     "FIXME:Generic",
     "FIXME:Generic Template Element",
     "karan <<user@hostname.org>>");
@@ -146,13 +144,13 @@ gst_mpeg4filter_class_init (Gstmpeg4filterClass * klass)
  * initialize instance structure
  */
 static void
-gst_mpeg4filter_init (Gstmpeg4filter * filter)
+gst_removesei_init (Gstremovesei * filter)
 {
   filter->sinkpad = gst_pad_new_from_static_template (&sink_factory, "sink");
   gst_pad_set_event_function (filter->sinkpad,
-                              GST_DEBUG_FUNCPTR(gst_mpeg4filter_sink_event));
+                              GST_DEBUG_FUNCPTR(gst_removesei_sink_event));
   gst_pad_set_chain_function (filter->sinkpad,
-                              GST_DEBUG_FUNCPTR(gst_mpeg4filter_chain));
+                              GST_DEBUG_FUNCPTR(gst_removesei_chain));
   GST_PAD_SET_PROXY_CAPS (filter->sinkpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
 
@@ -165,10 +163,10 @@ gst_mpeg4filter_init (Gstmpeg4filter * filter)
 }
 
 static void
-gst_mpeg4filter_set_property (GObject * object, guint prop_id,
+gst_removesei_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  Gstmpeg4filter *filter = GST_MPEG4FILTER (object);
+  Gstremovesei *filter = GST_REMOVESEI (object);
 
   switch (prop_id) {
     case PROP_ENABLE:
@@ -181,10 +179,10 @@ gst_mpeg4filter_set_property (GObject * object, guint prop_id,
 }
 
 static void
-gst_mpeg4filter_get_property (GObject * object, guint prop_id,
+gst_removesei_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  Gstmpeg4filter *filter = GST_MPEG4FILTER (object);
+  Gstremovesei *filter = GST_REMOVESEI (object);
 
   switch (prop_id) {
     case PROP_ENABLE:
@@ -200,12 +198,12 @@ gst_mpeg4filter_get_property (GObject * object, guint prop_id,
 
 /* this function handles sink events */
 static gboolean
-gst_mpeg4filter_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
+gst_removesei_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
 {
-  Gstmpeg4filter *filter;
+  Gstremovesei *filter;
   gboolean ret;
 
-  filter = GST_MPEG4FILTER (parent);
+  filter = GST_REMOVESEI (parent);
 
   GST_LOG_OBJECT (filter, "Received %s event: %" GST_PTR_FORMAT,
       GST_EVENT_TYPE_NAME (event), event);
@@ -232,56 +230,82 @@ gst_mpeg4filter_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
 /* chain function
  * this function does the actual processing
  */
-static GstFlowReturn push_mpeg4(Gstmpeg4filter *filter, unsigned char *data, int size)
-
+//BLACK FRAME
+static GstFlowReturn  send_data (Gstremovesei *filter, unsigned char *data, int size, unsigned char *sps, int sps_size, unsigned char *pps, int pps_size)
 {
-	GstBuffer *buf1;
-	GstMemory *memory;
-	GstMapInfo info1;
-	buf1 = gst_buffer_new ();
-	memory = gst_allocator_alloc (NULL, size, NULL);
-	gst_buffer_insert_memory (buf1, -1, memory);
-	gst_buffer_map (buf1, &info1, GST_MAP_WRITE);
-	memcpy (info1.data,  data, size);
-	gst_buffer_unmap (buf1, &info1);
-	return gst_pad_push (filter->srcpad, buf1);
+
+        GstBuffer *buf1;
+        GstMemory *memory;
+        GstMapInfo info1;
+        buf1 = gst_buffer_new ();
+        memory = gst_allocator_alloc (NULL, size+sps_size+pps_size, NULL);
+        gst_buffer_insert_memory (buf1, -1, memory);
+        gst_buffer_map (buf1, &info1, GST_MAP_WRITE);
+        if (sps != NULL)
+                memcpy (info1.data,  sps, sps_size);
+        if (pps != NULL)
+                memcpy (info1.data + sps_size,  pps, pps_size);
+        memcpy (info1.data + sps_size + pps_size,  data, size);
+        gst_buffer_unmap (buf1, &info1);
+        return gst_pad_push (filter->srcpad, buf1);
 }
 
 static GstFlowReturn
-gst_mpeg4filter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
+gst_removesei_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
 {
-  Gstmpeg4filter *filter;
-  GstMapInfo info;
-  int i;
-  static int first_frame = 0;
-  static int found  = 0;
-  filter = GST_MPEG4FILTER (parent);
-  gst_buffer_map (buf, &info, GST_MAP_READWRITE);
-  unsigned char *data = info.data;
-  unsigned char *data1 = info.data;
-  int offset = 0;
-  if (data[1] != 0x61)
-	  return GST_FLOW_OK;
-  data += 12;
-  //START SEQUENCE FOR EXTENTION HEADER in MPEG/RTP
-  if (  (data[0]==0x00) && 
-	(data[1]==0x01) )
-  {
-	  offset += 4 + (((data[2]*256) + data[3])*4);
-  }
-  else if (  (data[0]==0x00) && 
-	(data[1]==0x02) )
-  {
-	  offset += 4 + (((data[2]*256) + data[3])*4);
-  }
+	Gstremovesei *filter;
+	GstMapInfo info;
+	int i;
+	filter = GST_REMOVESEI (parent);
+	gst_buffer_map (buf, &info, GST_MAP_READWRITE);
+	unsigned char *data = info.data;
+	static unsigned char *sps =NULL;
+	static unsigned char *pps =NULL;
+	static int sps_sent  = 0;
+	static int pps_sent  = 0;
+	static int sps_size  = 0;
+	static int pps_size = 0;
 
-  int bsize = (info.size)-offset-12;
-  if (bsize < 0)
-	  offset = 0;
-  push_mpeg4 (filter, data+offset, (info.size)-offset-12);
-  gst_buffer_unmap (buf, &info);
-  gst_buffer_unref (buf);
-  return GST_FLOW_OK;
+	int size = info.size;
+
+	g_print ("frame_size %d: ", size);
+	for (int i=0; i<48 && i<size; i++)
+		g_print ("%02x ", data[i]);
+	g_print ("\n");
+	for (int i=0; i<(size-4); i++)
+	{
+		if ((data[i]   == 0x0) &&
+				(data[i+1] == 0x0) &&
+				(data[i+2] == 0x1)
+		   )
+		{
+			if (data[i+3] == 0x67)
+			{
+				sps = (unsigned char *)malloc(size-i);
+				memcpy (sps, data+i, size-i);
+				sps_size = size-i;
+			}
+			else if (data[i+3] == 0x68)
+			{
+				pps = (unsigned char *)malloc(size-i);
+				memcpy (pps, data+i, size-i);
+				pps_size = size-i;
+			}
+			else if (data[i+3] == 0x65)
+			{
+				g_print ("found I %d %d\n", i, size-i);
+				send_data(filter, data+i, size-i, sps, sps_size, pps, pps_size);
+			}
+			else if (data[i+3] == 0x41)
+			{
+				g_print ("found P %d %d\n", i, size-i);
+				send_data(filter, data+i, size-i, NULL, 0, NULL, 0);
+			}
+		}
+	}
+
+	gst_buffer_unmap (buf, &info);
+	return  GST_FLOW_OK;
 }
 
 
@@ -290,17 +314,17 @@ gst_mpeg4filter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
  * register the element factories and other features
  */
 static gboolean
-mpeg4filter_init (GstPlugin * mpeg4filter)
+removesei_init (GstPlugin * removesei)
 {
   /* debug category for fltering log messages
    *
-   * exchange the string 'Template mpeg4filter' with your description
+   * exchange the string 'Template removesei' with your description
    */
-  GST_DEBUG_CATEGORY_INIT (gst_mpeg4filter_debug, "mpeg4filter",
-      0, "Template mpeg4filter");
+  GST_DEBUG_CATEGORY_INIT (gst_removesei_debug, "removesei",
+      0, "Template removesei");
 
-  return gst_element_register (mpeg4filter, "mpeg4filter", GST_RANK_NONE,
-      GST_TYPE_MPEG4FILTER);
+  return gst_element_register (removesei, "removesei", GST_RANK_NONE,
+      GST_TYPE_REMOVESEI);
 }
 
 /* PACKAGE: this is usually set by autotools depending on some _INIT macro
@@ -309,19 +333,19 @@ mpeg4filter_init (GstPlugin * mpeg4filter)
  * compile this code. GST_PLUGIN_DEFINE needs PACKAGE to be defined.
  */
 #ifndef PACKAGE
-#define PACKAGE "myfirstmpeg4filter"
+#define PACKAGE "myfirstremovesei"
 #endif
 
-/* gstreamer looks for this structure to register mpeg4filters
+/* gstreamer looks for this structure to register removeseis
  *
- * exchange the string 'Template mpeg4filter' with your mpeg4filter description
+ * exchange the string 'Template removesei' with your removesei description
  */
 GST_PLUGIN_DEFINE (
     GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
-    mpeg4filter,
-    "Template mpeg4filter",
-    mpeg4filter_init,
+    removesei,
+    "Template removesei",
+    removesei_init,
     VERSION,
     "LGPL",
     "GStreamer",

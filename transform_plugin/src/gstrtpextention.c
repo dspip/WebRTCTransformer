@@ -44,14 +44,14 @@
  */
 
 /**
- * SECTION:element-mpeg4filter
+ * SECTION:element-rtpextention
  *
- * FIXME:Describe mpeg4filter here.
+ * FIXME:Describe rtpextention here.
  *
  * <refsect2>
  * <title>Example launch line</title>
  * |[
- * gst-launch -v -m fakesrc ! mpeg4filter ! fakesink silent=TRUE
+ * gst-launch -v -m fakesrc ! rtpextention ! fakesink silent=TRUE
  * ]|
  * </refsect2>
  */
@@ -59,15 +59,13 @@
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
-
+#include <gst/rtp/gstrtpbuffer.h>
 #include <gst/gst.h>
-#include <stdio.h>
-#include "gstmpeg4filter.h"
-#include <inttypes.h>
 
+#include "gstrtpextention.h"
 
-GST_DEBUG_CATEGORY_STATIC (gst_mpeg4filter_debug);
-#define GST_CAT_DEFAULT gst_mpeg4filter_debug
+GST_DEBUG_CATEGORY_STATIC (gst_rtpextention_debug);
+#define GST_CAT_DEFAULT gst_rtpextention_debug
 
 /* Filter signals and args */
 enum
@@ -92,28 +90,28 @@ static GstStaticPadTemplate sink_factory = GST_STATIC_PAD_TEMPLATE ("sink",
     GST_STATIC_CAPS ("ANY")
     );
 
-static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
+static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src_%u",
     GST_PAD_SRC,
-    GST_PAD_ALWAYS,
+    GST_PAD_SOMETIMES,
     GST_STATIC_CAPS ("ANY")
     );
 
-#define gst_mpeg4filter_parent_class parent_class
-G_DEFINE_TYPE (Gstmpeg4filter, gst_mpeg4filter, GST_TYPE_ELEMENT);
+#define gst_rtpextention_parent_class parent_class
+G_DEFINE_TYPE (Gstrtpextention, gst_rtpextention, GST_TYPE_ELEMENT);
 
-static void gst_mpeg4filter_set_property (GObject * object, guint prop_id,
+static void gst_rtpextention_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
-static void gst_mpeg4filter_get_property (GObject * object, guint prop_id,
+static void gst_rtpextention_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static gboolean gst_mpeg4filter_sink_event (GstPad * pad, GstObject * parent, GstEvent * event);
-static GstFlowReturn gst_mpeg4filter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf);
+static gboolean gst_rtpextention_sink_event (GstPad * pad, GstObject * parent, GstEvent * event);
+static GstFlowReturn gst_rtpextention_chain (GstPad * pad, GstObject * parent, GstBuffer * buf);
 
 /* GObject vmethod implementations */
 
-/* initialize the mpeg4filter's class */
+/* initialize the rtpextention's class */
 static void
-gst_mpeg4filter_class_init (Gstmpeg4filterClass * klass)
+gst_rtpextention_class_init (GstrtpextentionClass * klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *gstelement_class;
@@ -121,15 +119,15 @@ gst_mpeg4filter_class_init (Gstmpeg4filterClass * klass)
   gobject_class = (GObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
 
-  gobject_class->set_property = gst_mpeg4filter_set_property;
-  gobject_class->get_property = gst_mpeg4filter_get_property;
+  gobject_class->set_property = gst_rtpextention_set_property;
+  gobject_class->get_property = gst_rtpextention_get_property;
 
   g_object_class_install_property (gobject_class, PROP_ENABLE,
       g_param_spec_boolean ("enable", "Enable", "enable plugin ?",
           FALSE, G_PARAM_READWRITE));
 
   gst_element_class_set_details_simple(gstelement_class,
-    "mpeg4filter",
+    "rtpextention",
     "FIXME:Generic",
     "FIXME:Generic Template Element",
     "karan <<user@hostname.org>>");
@@ -146,29 +144,33 @@ gst_mpeg4filter_class_init (Gstmpeg4filterClass * klass)
  * initialize instance structure
  */
 static void
-gst_mpeg4filter_init (Gstmpeg4filter * filter)
+gst_rtpextention_init (Gstrtpextention * filter)
 {
   filter->sinkpad = gst_pad_new_from_static_template (&sink_factory, "sink");
   gst_pad_set_event_function (filter->sinkpad,
-                              GST_DEBUG_FUNCPTR(gst_mpeg4filter_sink_event));
+                              GST_DEBUG_FUNCPTR(gst_rtpextention_sink_event));
   gst_pad_set_chain_function (filter->sinkpad,
-                              GST_DEBUG_FUNCPTR(gst_mpeg4filter_chain));
+                              GST_DEBUG_FUNCPTR(gst_rtpextention_chain));
   GST_PAD_SET_PROXY_CAPS (filter->sinkpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
 
-  filter->srcpad = gst_pad_new_from_static_template (&src_factory, "src");
+  filter->srcpad = gst_pad_new_from_static_template (&src_factory, "src_0");
   GST_PAD_SET_PROXY_CAPS (filter->srcpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
+
+  filter->srcpad1 = gst_pad_new_from_static_template (&src_factory, "src_1");
+  GST_PAD_SET_PROXY_CAPS (filter->srcpad1);
+  gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad1);
 
   filter->enable = FALSE;
   filter->sent_sei = FALSE;
 }
 
 static void
-gst_mpeg4filter_set_property (GObject * object, guint prop_id,
+gst_rtpextention_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  Gstmpeg4filter *filter = GST_MPEG4FILTER (object);
+  Gstrtpextention *filter = GST_RTPEXTENTION (object);
 
   switch (prop_id) {
     case PROP_ENABLE:
@@ -181,10 +183,10 @@ gst_mpeg4filter_set_property (GObject * object, guint prop_id,
 }
 
 static void
-gst_mpeg4filter_get_property (GObject * object, guint prop_id,
+gst_rtpextention_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  Gstmpeg4filter *filter = GST_MPEG4FILTER (object);
+  Gstrtpextention *filter = GST_RTPEXTENTION (object);
 
   switch (prop_id) {
     case PROP_ENABLE:
@@ -200,12 +202,12 @@ gst_mpeg4filter_get_property (GObject * object, guint prop_id,
 
 /* this function handles sink events */
 static gboolean
-gst_mpeg4filter_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
+gst_rtpextention_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
 {
-  Gstmpeg4filter *filter;
+  Gstrtpextention *filter;
   gboolean ret;
 
-  filter = GST_MPEG4FILTER (parent);
+  filter = GST_RTPEXTENTION (parent);
 
   GST_LOG_OBJECT (filter, "Received %s event: %" GST_PTR_FORMAT,
       GST_EVENT_TYPE_NAME (event), event);
@@ -229,59 +231,32 @@ gst_mpeg4filter_sink_event (GstPad * pad, GstObject * parent, GstEvent * event)
   return ret;
 }
 
-/* chain function
- * this function does the actual processing
- */
-static GstFlowReturn push_mpeg4(Gstmpeg4filter *filter, unsigned char *data, int size)
-
-{
-	GstBuffer *buf1;
-	GstMemory *memory;
-	GstMapInfo info1;
-	buf1 = gst_buffer_new ();
-	memory = gst_allocator_alloc (NULL, size, NULL);
-	gst_buffer_insert_memory (buf1, -1, memory);
-	gst_buffer_map (buf1, &info1, GST_MAP_WRITE);
-	memcpy (info1.data,  data, size);
-	gst_buffer_unmap (buf1, &info1);
-	return gst_pad_push (filter->srcpad, buf1);
-}
 
 static GstFlowReturn
-gst_mpeg4filter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
+gst_rtpextention_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
 {
-  Gstmpeg4filter *filter;
+  GstRTPBuffer rtpbuffer = GST_RTP_BUFFER_INIT;
+  GstRTPBuffer  *rbuf;
+  Gstrtpextention *filter;
   GstMapInfo info;
   int i;
-  static int first_frame = 0;
-  static int found  = 0;
-  filter = GST_MPEG4FILTER (parent);
-  gst_buffer_map (buf, &info, GST_MAP_READWRITE);
-  unsigned char *data = info.data;
-  unsigned char *data1 = info.data;
-  int offset = 0;
-  if (data[1] != 0x61)
-	  return GST_FLOW_OK;
-  data += 12;
-  //START SEQUENCE FOR EXTENTION HEADER in MPEG/RTP
-  if (  (data[0]==0x00) && 
-	(data[1]==0x01) )
+  filter = GST_RTPEXTENTION (parent);
+  GstFlowReturn ret =  GST_FLOW_OK;
+  gst_rtp_buffer_map (buf, GST_MAP_READ, &rtpbuffer);
+  gboolean present_extention =  gst_rtp_buffer_get_extension (&rtpbuffer);
+  if (present_extention == 1)
   {
-	  offset += 4 + (((data[2]*256) + data[3])*4);
+	  guint16  bits;
+	  GBytes * bytes = NULL;
+          bytes = gst_rtp_buffer_get_extension_bytes (&rtpbuffer,
+                                    &bits);
+	  GByteArray *byteArray = g_bytes_unref_to_array (bytes);
+	  guint8 *data = byteArray->data;
+	  ret = send_extention_data (filter,  byteArray->data, byteArray->len);
   }
-  else if (  (data[0]==0x00) && 
-	(data[1]==0x02) )
-  {
-	  offset += 4 + (((data[2]*256) + data[3])*4);
-  }
-
-  int bsize = (info.size)-offset-12;
-  if (bsize < 0)
-	  offset = 0;
-  push_mpeg4 (filter, data+offset, (info.size)-offset-12);
-  gst_buffer_unmap (buf, &info);
-  gst_buffer_unref (buf);
-  return GST_FLOW_OK;
+  gst_rtp_buffer_unmap (&rtpbuffer);
+  ret = gst_pad_push (filter->srcpad, buf);
+  return ret;
 }
 
 
@@ -290,17 +265,17 @@ gst_mpeg4filter_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
  * register the element factories and other features
  */
 static gboolean
-mpeg4filter_init (GstPlugin * mpeg4filter)
+rtpextention_init (GstPlugin * rtpextention)
 {
   /* debug category for fltering log messages
    *
-   * exchange the string 'Template mpeg4filter' with your description
+   * exchange the string 'Template rtpextention' with your description
    */
-  GST_DEBUG_CATEGORY_INIT (gst_mpeg4filter_debug, "mpeg4filter",
-      0, "Template mpeg4filter");
+  GST_DEBUG_CATEGORY_INIT (gst_rtpextention_debug, "rtpextention",
+      0, "Template rtpextention");
 
-  return gst_element_register (mpeg4filter, "mpeg4filter", GST_RANK_NONE,
-      GST_TYPE_MPEG4FILTER);
+  return gst_element_register (rtpextention, "rtpextention", GST_RANK_NONE,
+      GST_TYPE_RTPEXTENTION);
 }
 
 /* PACKAGE: this is usually set by autotools depending on some _INIT macro
@@ -309,19 +284,19 @@ mpeg4filter_init (GstPlugin * mpeg4filter)
  * compile this code. GST_PLUGIN_DEFINE needs PACKAGE to be defined.
  */
 #ifndef PACKAGE
-#define PACKAGE "myfirstmpeg4filter"
+#define PACKAGE "myfirstrtpextention"
 #endif
 
-/* gstreamer looks for this structure to register mpeg4filters
+/* gstreamer looks for this structure to register rtpextentions
  *
- * exchange the string 'Template mpeg4filter' with your mpeg4filter description
+ * exchange the string 'Template rtpextention' with your rtpextention description
  */
 GST_PLUGIN_DEFINE (
     GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
-    mpeg4filter,
-    "Template mpeg4filter",
-    mpeg4filter_init,
+    rtpextention,
+    "Template rtpextention",
+    rtpextention_init,
     VERSION,
     "LGPL",
     "GStreamer",
