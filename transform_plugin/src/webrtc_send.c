@@ -135,7 +135,7 @@ const gchar *html_source = " \n \
  \n \
       window.onload = function() { \n \
         var vidstream = document.getElementById(\"stream\"); \n \
-        var config = { 'iceServers': [{ 'urls': 'stun:" STUN_SERVER "' }] }; \n\
+        var config = {}; \n\
 	vidstream.autoplay    = true; \n \
 	vidstream.playsinline = true; \n \
 	vidstream.muted       = true; \n \

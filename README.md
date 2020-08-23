@@ -1,5 +1,14 @@
 #Project Overview
 
+
+To Run Object Detection module:
+run  ./src/stream_send 5 127.0.0.1 4000 
+Then on browser  hit the url http://127.0.0.1:57778
+Then send the rtp packets  for inference using 
+./rtp_generator file.mp4  1 0 127.0.0.1 4000
+
+
+
 RTP GENERATOR:
 when we compile the code rtp_generator will be created in src/rtp_generator.
 
