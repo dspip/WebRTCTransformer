@@ -311,12 +311,13 @@ void*  start_webrtc_stream(
     else if ((add_filter == 7))
     {
      sprintf(pipeline_str, "webrtcbin name=webrtcbin "
-       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  timestamp ! avdec_mpeg4 skip-frame=5 ! videoconvert ! videorate ! video/x-raw, framerate=60/1 ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
+       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  ! nvv4l2decoder !  timestamp ! nvvideoconvert ! video/x-raw(memory:NVMM),format=I420  ! nvv4l2h264enc ! h264parse  ! rtph264pay config-interval=-1 !  "
        "application/x-rtp,media=video,encoding-name=H264,payload="
        RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface);
     }
     else if ((add_filter == 8))
     {
+#if 0	    
      if (!strcmp (fps, "-1"))
      {
 	     sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
@@ -327,13 +328,20 @@ void*  start_webrtc_stream(
      else
      {
 	     float fps_v = atof(fps);
-	     int fps_num = fps_v*1000;
-	     int fps_den = 1000;
+	     int fps_num = fps_v*100;
+	     int fps_den = 100;
 	     sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
 			     "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  !  timestamp fps=%s ! avdec_mpeg4 skip-frame=5 ! videoconvert !  videorate ! video/x-raw, framerate=%d/%d ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
 			     "application/x-rtp,media=video,encoding-name=H264,payload="
 			     RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface, fps, fps_num, fps_den);
      }
+#else
+
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin "
+       "udpsrc address=%s port=%s  multicast-iface=%s  ! mpeg4filter ! mpeg4videoparse  ! nvv4l2decoder !  timestamp fps=%s ! nvvideoconvert ! video/x-raw(memory:NVMM),format=I420  ! nvv4l2h264enc ! h264parse  ! rtph264pay config-interval=-1 !  "
+       "application/x-rtp,media=video,encoding-name=H264,payload="
+       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface, fps);
+#endif     
     }
     else if ((add_filter == 9))
     {
