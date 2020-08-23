@@ -1,6 +1,9 @@
 set(LIBIDRINSERT_SOURCES
    gstidrinsert.c
    )
+set(LIBC264DEPAY_SOURCES
+   gstc264depay.c
+   )
 set(LIBMPEG4FILTER_SOURCES
    gstmpeg4filter.c
    )
@@ -26,6 +29,10 @@ include_directories(${GSTREAMER_INCLUDE_DIRS} )
 add_library(idrinsert SHARED ${LIBIDRINSERT_SOURCES})
 target_link_libraries(idrinsert ${GSTREAMER_LIBRARIES})
 install(TARGETS idrinsert LIBRARY DESTINATION "/usr/lib/x86_64-linux-gnu/gstreamer-1.0/")
+
+add_library(c264depay SHARED ${LIBC264DEPAY_SOURCES})
+target_link_libraries(c264depay ${GSTREAMER_LIBRARIES})
+install(TARGETS c264depay LIBRARY DESTINATION "/usr/lib/x86_64-linux-gnu/gstreamer-1.0/")
 
 add_library(mpeg4filter SHARED ${LIBMPEG4FILTER_SOURCES})
 target_link_libraries(mpeg4filter ${GSTREAMER_LIBRARIES})
