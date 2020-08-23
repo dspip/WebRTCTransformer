@@ -1,6 +1,9 @@
 set(LIBIDRINSERT_SOURCES
    gstidrinsert.c
    )
+set(LIBC264DEPAY_SOURCES
+   gstc264depay.c
+   )
 set(LIBMPEG4FILTER_SOURCES
    gstmpeg4filter.c
    )
@@ -18,14 +21,32 @@ set (STREAMRECV_SOURCES
 	webrtc.c
     )
 
-set (RTPGEN_SOURCES    
-      rtp_generator.c
-)
+set(LIBRTPEXTENTION_SOURCES
+   gstrtpextention.c
+   )
+
+set(LIBREMOVESEI_SOURCES
+   gstremovesei.c
+   )
 
 include_directories(${GSTREAMER_INCLUDE_DIRS} )
 add_library(idrinsert SHARED ${LIBIDRINSERT_SOURCES})
 target_link_libraries(idrinsert ${GSTREAMER_LIBRARIES})
 install(TARGETS idrinsert LIBRARY DESTINATION "/usr/lib/x86_64-linux-gnu/gstreamer-1.0/")
+
+add_library(removesei SHARED ${LIBREMOVESEI_SOURCES})
+target_link_libraries(removesei ${GSTREAMER_LIBRARIES})
+install(TARGETS removesei LIBRARY DESTINATION "/usr/lib/x86_64-linux-gnu/gstreamer-1.0/")
+
+
+add_library(rtpextention SHARED ${LIBRTPEXTENTION_SOURCES})
+target_link_libraries(rtpextention ${GSTREAMER_LIBRARIES}) 
+install(TARGETS rtpextention  LIBRARY DESTINATION "/usr/lib/x86_64-linux-gnu/gstreamer-1.0/")
+
+add_library(c264depay SHARED ${LIBC264DEPAY_SOURCES})
+target_link_libraries(c264depay ${GSTREAMER_LIBRARIES})
+install(TARGETS c264depay LIBRARY DESTINATION "/usr/lib/x86_64-linux-gnu/gstreamer-1.0/")
+
 
 add_library(mpeg4filter SHARED ${LIBMPEG4FILTER_SOURCES})
 target_link_libraries(mpeg4filter ${GSTREAMER_LIBRARIES})
@@ -44,5 +65,3 @@ target_link_libraries(stream_send ${GSTREAMER_LIBRARIES})
 add_executable(stream_recv ${STREAMRECV_SOURCES})
 target_link_libraries(stream_recv ${GSTREAMER_LIBRARIES})
 #install(TARGETS stream_recv EXECUTABLE DESTINATION "lib")
-add_executable(rtp_generator ${RTPGEN_SOURCES})
-target_link_libraries(rtp_generator ${GSTREAMER_LIBRARIES})
