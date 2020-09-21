@@ -281,11 +281,18 @@ void*  start_webrtc_stream(
     //Pass through H264
     else if (add_filter == 3)
     {
-     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin "
        "udpsrc address=%s port=%s ! "
        "application/x-rtp,media=video,encoding-name=H264,payload="
        RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
     }
+    // else if (add_filter == 3)
+    // {
+    //  sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
+    //    "udpsrc address=%s port=%s ! "
+    //    "application/x-rtp,media=video,encoding-name=H264,payload="
+    //    RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
+    // }
     //Pass through VP9
     else if (add_filter == 4)
     {

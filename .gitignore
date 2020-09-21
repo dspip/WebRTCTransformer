@@ -1,0 +1,6 @@
+/transform_plugin/build
+/.idea
+*/.idea
+/.vscode
+*/.vscode
+/video/*.*
