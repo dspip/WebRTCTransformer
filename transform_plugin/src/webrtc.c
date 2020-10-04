@@ -317,7 +317,7 @@ void*  start_webrtc_stream(
     }
     else if ((add_filter == 8))
     {
-#if 0	    
+#if 1	    
      if (!strcmp (fps, "-1"))
      {
 	     sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
