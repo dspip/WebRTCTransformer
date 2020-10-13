@@ -331,7 +331,7 @@ void*  start_webrtc_stream(
 	     int fps_num = fps_v*100;
 	     int fps_den = 100;
 	     sprintf(pipeline_str, "webrtcbin name=webrtcbin  "
-			     "udpsrc address=%s port=%s multicast-iface=%s ! mpeg4filter ! mpeg4videoparse ! timestamp fps=%s ! avdec_mpeg4 skip-frame=5 ! videorate drop-only=true ! video/x-raw, framerate=%d/%d ! x264enc tune=zerolatency key-int-max=%d intra-refresh=true ! video/x-h264, profile=baseline ! rtph264pay config-interval=-1 ! "
+			     "udpsrc address=%s port=%s multicast-iface=%s ! mpeg4filter ! mpeg4videoparse ! timestamp fps=%s ! avdec_mpeg4 skip-frame=5 ! queue max-size-buffers=0 ! videorate drop-only=true ! video/x-raw, framerate=60/1 ! x264enc threads=5 tune=zerolatency intra-refresh=true key-int-max=90 ! video/x-h264, profile=baseline ! rtph264pay config-interval=-1 ! "
 			     "application/x-rtp,media=video,encoding-name=H264,payload="
 			     RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port, interface, fps, fps_num, fps_den, (int) fps_v);
      }
