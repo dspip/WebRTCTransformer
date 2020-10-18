@@ -2,7 +2,7 @@ FROM nvcr.io/nvidia/deepstream:5.0.1-20.09-base
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update
-# RUN apt-get install -y gstreamer1.0-tools gstreamer1.0-nice gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-plugins-good libgstreamer1.0-dev libglib2.0-dev libgstreamer-plugins-bad1.0-dev libsoup2.4-dev libjson-glib-dev
+RUN apt-get install -y gstreamer1.0-tools gstreamer1.0-nice gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-plugins-good libgstreamer1.0-dev libglib2.0-dev libgstreamer-plugins-bad1.0-dev libsoup2.4-dev libjson-glib-dev
 RUN apt-get install -y cmake git ninja-build zip
 RUN apt-get autoremove -y
 
@@ -14,12 +14,12 @@ RUN apt-get autoremove -y
 # RUN opts/vcpkg/vcpkg install boost 
 # RUN ./vcpkg install nlohmann-json
 
-RUN mkdir -p /opt/nvidia/deepstream/deepstream-5.0.1/WebRTCTransformer
+RUN mkdir -p /opt/nvidia/deepstream/deepstream/WebRTCTransformer
 WORKDIR /opt/nvidia/deepstream/deepstream-5.0.1/WebRTCTransformer
 COPY . .
 
-RUN mkdir build && cd build \ 
+RUN cd transform_plugin && mkdir build && cd build \ 
 && cmake .. \
 && cmake --build . --config Release --target all -- -j 6 
 
-ENTRYPOINT [ "./build/WebRTCController" ]
+ENTRYPOINT [ "./transform_plugin/build/src/stream_send" ]

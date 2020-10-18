@@ -1,4 +1,10 @@
-#Project Overview
+# Dockerfile:
+prerequesits - [nvidia-docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+
+      $ docker build . -t webrtc_transformer
+      $ docker run -it --rm --network="host" --gpus all webrtc_transformer <...args>
+
+# Project Overview
 
 RTP GENERATOR:
 when we compile the code rtp_generator will be created in src/rtp_generator.
