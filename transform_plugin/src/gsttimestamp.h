@@ -47,6 +47,7 @@
 #define __GST_TIMESTAMP_H__
 
 #include <gst/gst.h>
+#include <sys/time.h>
 
 G_BEGIN_DECLS
 
