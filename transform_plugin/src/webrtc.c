@@ -312,15 +312,14 @@ void*  start_webrtc_stream(
     else if ((add_filter == 7))
     {
       sprintf(pipeline_str, "webrtcbin name=webrtcbin "
-      "udpsrc address=%s port=%s multicast-iface=%s ! "
+      "udpsrc address=%s port=%s multicast-iface=eno0 ! "
       "mpeg4filter ! mpeg4videoparse ! "
-      "timestamp fps=60.0 ! nvv4l2decoder ! " // no queue, but might want to add if does not add latency
+      "timestamp fps=60.0 ! nvv4l2decoder ! "
       "nvvideoconvert src-crop=0:0:720:240 ! video/x-raw(memory:NVMM),format=NV12 ! "
       "nvv4l2h264enc ! "
       "h264parse ! "
-      // "video/x-h264, profile=baseline ! " // is'nt required for playback, worth checking for latency, might be interchangable with h264parse
       "rtph264pay config-interval=-1 ! application/x-rtp,media=video,encoding-name=H264,payload="RTP_PAYLOAD_TYPE" ! "
-      "webrtcbin.", address, port, interface);
+      "webrtcbin.", address, port);
     }
     //mpeg stream cpu + crop
     else if ((add_filter == 8))
@@ -332,8 +331,7 @@ void*  start_webrtc_stream(
       "videocrop bottom=240 ! videoscale method=0 ! videorate drop-only=true ! video/x-raw, framerate=60/1, height=480 ! "
       "x264enc threads=5 tune=zerolatency intra-refresh=true key-int-max=90 ! "
       "video/x-h264, profile=baseline ! "
-      "rtph264pay config-interval=-1 ! application/x-rtp,media=video,encoding-name=H264,payload="RTP_PAYLOAD_TYPE" ! "
-      "webrtcbin.", address, port, interface, fps);  
+      "rtph264pay config-interval=-1 ! application/x-rtp,media=video,encoding-name=H264,payload="RTP_PAYLOAD_TYPE" ! webrtcbin.", address, port, interface, fps);  
     }
     else if ((add_filter == 9))
     {

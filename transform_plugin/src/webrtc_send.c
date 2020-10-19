@@ -42,116 +42,75 @@ exit_sighandler (gpointer user_data)
   return TRUE;
 }
 
-const gchar *html_source = " \n \
-<html> \n \
-  <head> \n \
-  <meta charset=\"utf-8\">\n \
-    <script type=\"text/javascript\" src=\"https://webrtc.github.io/adapter/adapter-latest.js\"></script> \n \
-    <script type=\"text/javascript\"> \n \
-      var html5VideoElement; \n \
-      var websocketConnection; \n \
-      var webrtcPeerConnection; \n \
-      var webrtcConfiguration; \n \
-      var reportError; \n \
- \n \
- \n \
-      function onLocalDescription(desc) { \n \
-        console.log(\"Local description: \" + JSON.stringify(desc)); \n \
-        webrtcPeerConnection.setLocalDescription(desc).then(function() { \n \
-          websocketConnection.send(JSON.stringify({ type: \"sdp\", \"data\": webrtcPeerConnection.localDescription })); \n \
-        }).catch(reportError); \n \
-      } \n \
- \n \
- \n \
-      function onIncomingSDP(sdp) { \n \
-        console.log(\"Incoming SDP: \" + JSON.stringify(sdp)); \n \
-        webrtcPeerConnection.setRemoteDescription(sdp).catch(reportError); \n \
-        webrtcPeerConnection.createAnswer().then(onLocalDescription).catch(reportError); \n \
-      } \n \
- \n \
- \n \
-      function onIncomingICE(ice) { \n \
-        var candidate = new RTCIceCandidate(ice); \n \
-        console.log(\"Incoming ICE: \" + JSON.stringify(ice)); \n \
-        webrtcPeerConnection.addIceCandidate(candidate).catch(reportError); \n \
-      } \n \
- \n \
- \n \
-      function onAddRemoteStream(event) { \n \
-        html5VideoElement.srcObject = event.streams[0]; \n \
-      } \n \
- \n \
- \n \
-      function onIceCandidate(event) { \n \
-        if (event.candidate == null) \n \
-          return; \n \
- \n \
-        console.log(\"Sending ICE candidate out: \" + JSON.stringify(event.candidate)); \n \
-        websocketConnection.send(JSON.stringify({ \"type\": \"ice\", \"data\": event.candidate })); \n \
-      } \n \
- \n \
- \n \
-      function onServerMessage(event) { \n \
-        var msg; \n \
- \n \
-        try { \n \
-          msg = JSON.parse(event.data); \n \
-        } catch (e) { \n \
-          return; \n \
-        } \n \
- console.log (\"On Server Message\")\n \
- \n \
-        if (!webrtcPeerConnection) { \n \
-          webrtcPeerConnection = new RTCPeerConnection(webrtcConfiguration); \n \
-          webrtcPeerConnection.ontrack = onAddRemoteStream; \n \
-          webrtcPeerConnection.onicecandidate = onIceCandidate; \n \
-        } \n \
- \n \
-        switch (msg.type) { \n \
-          case \"sdp\": onIncomingSDP(msg.data); break; \n \
-          case \"ice\": onIncomingICE(msg.data); break; \n \
-          default: break; \n \
-        } \n \
-      } \n \
- \n \
- \n \
-      function playStream(videoElement, hostname, port, path, configuration, reportErrorCB) { \n \
-        var l = window.location;\n \
-        var wsHost = (hostname != undefined) ? hostname : l.hostname; \n \
-        var wsPort = (port != undefined) ? port : l.port; \n \
-        var wsPath = (path != undefined) ? path : \"ws\"; \n \
-        if (wsPort) \n\
-          wsPort = \":\" + wsPort; \n\
-        var wsUrl = \"ws://\" + wsHost + wsPort + \"/\" + wsPath; \n \
- \n \
-  console.log (\"WS URL \"+wsUrl) \n \
-        html5VideoElement = videoElement; \n \
-        webrtcConfiguration = configuration; \n \
-        reportError = (reportErrorCB != undefined) ? reportErrorCB : function(text) {}; \n \
- \n \
-        websocketConnection = new WebSocket(wsUrl); \n \
-        websocketConnection.addEventListener(\"message\", onServerMessage); \n \
-      } \n \
- \n \
-      window.onload = function() { \n \
-        var vidstream = document.getElementById(\"stream\"); \n \
-        var config = {}; \n\
-	vidstream.autoplay    = true; \n \
-	vidstream.playsinline = true; \n \
-	vidstream.muted       = true; \n \
-        playStream(vidstream, null, null, null, config, function (errmsg) { console.error(errmsg); }); \n \
-      }; \n \
- \n \
-    </script> \n \
-  </head> \n \
- \n \
-  <body> \n \
-    <div> \n \
-      <video id=\"stream\" autoplay playsinline>Your browser does not support video</video> \n \
-    </div> \n \
-  </body> \n \
-</html> \n \
-";
+const gchar *html_source =
+    "<html> \n \
+	<head> \n \
+		<meta charset=\"utf-8\" /> \n \
+		<script type=\"text/javascript\" src=\"https://webrtc.github.io/adapter/adapter-latest.js\"></script> \n \
+        <style>*{margin: 0;padding:0;}video{max-width: 100vw;max-height: 100vh;}</style> \n \
+		<script type=\"text/javascript\"> \n \
+			let ws; \n \
+			let pc; \n \
+			const send = (ws, data) => ws.send(JSON.stringify(data)); \n \
+			function playStream(videoElement, wsUrl, config, reportError = (err) => console.error(err.message)) { \n \
+				let mediaStream = new MediaStream(); \n \
+				videoElement.srcObject = mediaStream; \n \
+				if (ws && ws.readyState == WebSocket.OPEN) ws.close(); \n \
+				ws = new WebSocket(wsUrl); \n \
+				const onsdp = async (sdp) => { \n \
+					if (pc) pc.close(); \n \
+					pc = new RTCPeerConnection(config); \n \
+					pc.addEventListener(\"track\", ({ track }) => { \n \
+						mediaStream.addTrack(track); \n \
+						track.addEventListener(\"unmute\", () => mediaStream.addTrack(track)); \n \
+						track.addEventListener(\"mute\", () => mediaStream.removeTrack(track)); \n \
+					}); \n \
+					pc.addEventListener(\"icecandidate\", ({ candidate: data }) => { \n \
+						if (data) send(ws, { type: \"ice\", data }); \n \
+					}); \n \
+					try { \n \
+						await pc.setRemoteDescription(sdp); \n \
+						let data = await pc.createAnswer(); \n \
+						await pc.setLocalDescription(data); \n \
+						send(ws, { type: \"sdp\", data }); \n \
+					} catch (err) { \n \
+						if (reportError) reportError(err); \n \
+					} \n \
+				}; \n \
+				const onice = async (ice) => { \n \
+					try { \n \
+						pc.addIceCandidate(new RTCIceCandidate(ice)); \n \
+					} catch (err) { \n \
+						if (reportError) reportError(err); \n \
+					} \n \
+				}; \n \
+				ws.addEventListener(\"message\", (ev) => { \n \
+					try { \n \
+						let { type, data } = JSON.parse(ev.data); \n \
+						if (type == \"sdp\") onsdp(data); \n \
+						else if (type == \"ice\") onice(data); \n \
+						else throw new Error(`received unrecognized message type: ${type}`); \n \
+					} catch (err) { \n \
+						if (reportError) reportError(err); \n \
+					} \n \
+				}); \n \
+			} \n \
+			window.onload = () => { \n \
+				let videoElement = document.getElementById(\"stream\"); \n \
+				let config = { iceServers: [{ urls: \"stun:stun.l.google.com:19302\" }] }; \n \
+				videoElement.autoplay = true; \n \
+				videoElement.muted = true; \n \
+				playStream(videoElement, `ws://${window.location.host}/ws`, config); \n \
+			}; \n \
+		</script> \n \
+	</head> \n \
+	<body> \n \
+		<div> \n \
+			<video id=\"stream\" autoplay playsinline controls>Your browser does not support video</video> \n \
+		</div> \n \
+	</body> \n \
+</html>";
+
 void
 soup_http_handler (G_GNUC_UNUSED SoupServer * soup_server,
     SoupMessage * message, const char *path, G_GNUC_UNUSED GHashTable * query,
