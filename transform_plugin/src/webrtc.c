@@ -297,11 +297,26 @@ void*  start_webrtc_stream(
        RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
     }
     else if ((add_filter == 5))
-    {
-     sprintf(pipeline_str, "webrtcbin name=webrtcbin stun-server=stun://" STUN_SERVER " "
-       "udpsrc address=%s port=%s ! application/x-rtp, clock-rate=90000, encoding-name=MP4V-ES ! rtpmp4vdepay ! avdec_mpeg4 ! timestamp ! videoconvert ! x264enc tune=zerolatency !  video/x-h264, profile=baseline ! rtph264pay config-interval=-1 !  "
-       "application/x-rtp,media=video,encoding-name=H264,payload="
-       RTP_PAYLOAD_TYPE " ! webrtcbin. ", address, port);
+    { // get models using readme in https://github.com/NVIDIA-AI-IOT/deepstream_tlt_apps
+     sprintf(pipeline_str, "webrtcbin name=webrtcbin "
+     "udpsrc address=%s port=%s ! "
+     "application/x-rtp, encoding-name=H264, clock-rate=90000 ! "
+     "rtph264depay ! "
+     "h264parse ! "
+     "video/x-h264, stream-format=avc ! "
+     "h264parse ! "
+     "video/x-h264, stream-format=byte-stream ! "
+     "nvv4l2decoder name=dec nvstreammux name=mux width=1920 height=1080 batch-size=1 batched-push-timeout=4000 "
+     "dec.src ! mux.sink_0 "
+     "mux. ! nvinfer config-file-path=\"./pgie_detectnet_v2_tlt_config.txt\" ! "
+     "nvvideoconvert ! "
+     "nvdsosd ! "
+     "nvvideoconvert ! "
+     "nvv4l2h264enc ! "
+     "h264parse ! "
+     "rtph264pay config-interval=-1 ! "
+     "application/x-rtp,media=video,encoding-name=H264,payload=" RTP_PAYLOAD_TYPE " ! "
+     "wdebrtcbin. ", address, port);
     }
     else if ((add_filter == 6))
     {
