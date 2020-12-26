@@ -16,6 +16,10 @@ set (STREAMSEND_SOURCES
 	webrtc.c
     )
 
+set (KLVMUX_SOURCES
+	klv_mux.c
+    )
+
 set (STREAMRECV_SOURCES
 	webrtc_recv.c
 	webrtc.c
@@ -65,3 +69,6 @@ target_link_libraries(stream_send ${GSTREAMER_LIBRARIES})
 add_executable(stream_recv ${STREAMRECV_SOURCES})
 target_link_libraries(stream_recv ${GSTREAMER_LIBRARIES})
 #install(TARGETS stream_recv EXECUTABLE DESTINATION "lib")
+
+add_executable(klv_mux ${KLVMUX_SOURCES})
+target_link_libraries(klv_mux ${GSTREAMER_LIBRARIES})
